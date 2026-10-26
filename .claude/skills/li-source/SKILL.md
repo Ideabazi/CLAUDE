@@ -8,6 +8,7 @@ description: Pull prospects into the outreach CRM by LinkedIn degree — 1st-deg
 Goal: US founders / CEOs / presidents / owners of SMB and mid-market companies (5–500 employees) that fit an Ideabazi offer route in `config/outreach.toml`. Every source ends in the same place: `python3 crm/ob.py qualify`.
 
 ## Ground rules
+- **No Apollo.** The connected Apollo account belongs to a client. Wherever this file mentions Apollo, use Clay, FullEnrich or Vibe Prospecting instead (confirm the account is Dave's first).
 - **No scraping LinkedIn.** Don't crawl connection lists, search results or "People also viewed" with a browser, and don't use cookie-based scrapers. LinkedIn restricts accounts for this, and Dave's account is the asset. Data comes from: LinkedIn's own data export, Sales Navigator exports or lists Dave pulls himself, and B2B data providers (Apollo, Clay, FullEnrich, Vibe Prospecting).
 - Profile views in Dave's browser (for the degree check) are capped at `caps.profile_views_per_run`, 20–40 seconds apart. Stop at any checkpoint or CAPTCHA. Never log in.
 - Paid enrichment: state the credit cost first and wait for a yes (ideabazi-outbound hard rule 7).

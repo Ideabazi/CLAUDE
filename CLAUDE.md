@@ -15,7 +15,8 @@ new → qualified | disqualified → researched → ready (approved copy) → in
 
 ## Rules for Claude in this repo
 - The **ideabazi-outbound** skill's hard rules apply: Claude doesn't send unless Dave approves a specific batch; nothing is fabricated; credits are stated before any paid enrichment; LinkedIn is limited to viewing plus capped connection requests in a live session.
-- No LinkedIn scraping, no bulk profile crawling, no cookie or session automation tools. Data comes from LinkedIn's own data export, Sales Navigator exports, and Apollo/Clay/FullEnrich/Vibe.
+- **Do not use Apollo.** The connected Apollo account belongs to a client, so don't read from or write to it, even where a skill (including ideabazi-outbound) lists Apollo. Use Clay / FullEnrich / Vibe Prospecting (after confirming the account is Dave's) or Sales Navigator instead.
+- No LinkedIn scraping, no bulk profile crawling, no cookie or session automation tools. Data comes from LinkedIn's own data export, Sales Navigator exports, and Clay/FullEnrich/Vibe.
 - Every state change goes through `ob.py` (`log`, `research-in`, `approve`). Never edit the DB by hand.
 - Run `python3 crm/ob.py dashboard` after any batch of changes.
 - Tests: `python3 -m unittest discover -s tests`.

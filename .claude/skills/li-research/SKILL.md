@@ -8,6 +8,7 @@ description: Research qualified prospects in the outreach CRM. Confirm ICP fit a
 This skill is the CRM wrapper around the **ideabazi-outbound** skill. Load it first: its research, scoring, gift, icebreaker, voice, slop-test and banned-word rules (Steps 4–10 and Section 0) apply here unchanged. This skill adds only the CRM plumbing.
 
 ## Steps
+- **No Apollo.** The connected Apollo account belongs to a client. Wherever this file mentions Apollo, use Clay, FullEnrich or Vibe Prospecting instead (confirm the account is Dave's first).
 1. **Pick the batch.** `python3 crm/ob.py list --stage qualified --json --limit N`. Default N = 10 on a new route or ICP, and up to 40 once Dave has reviewed a batch. Order: 1st-degree first, then 2nd-degree with mutuals, then the rest by score.
 2. **Re-check the offer.** Try ideabazi.com; if it's unreachable, use the offer routes in `config/outreach.toml` and say so. Only cite prices and proof that are live.
 3. **Research each contact** (ideabazi-outbound Step 4): their site plus 1–2 external sources, and their recent LinkedIn activity if visible (Clay recent posts or Vibe `enrich-business-linkedin-posts`; or a single view-only profile visit). Fill in any missing location, headcount or industry. **Drop anyone who is not US, outside 5–500 employees, or not the owner/economic buyer**: set `"stage": "disqualified"` with a reason in `notes`.
