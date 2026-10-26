@@ -18,5 +18,5 @@ new → qualified | disqualified → researched → ready (approved copy) → in
 - **Do not use Apollo.** The connected Apollo account belongs to a client, so don't read from or write to it, even where a skill (including ideabazi-outbound) lists Apollo. Use Clay / FullEnrich / Vibe Prospecting (after confirming the account is Dave's) or Sales Navigator instead.
 - No LinkedIn scraping, no bulk profile crawling, no cookie or session automation tools. Data comes from LinkedIn's own data export, Sales Navigator exports, and Clay/FullEnrich/Vibe.
 - Every state change goes through `ob.py` (`log`, `research-in`, `approve`). Never edit the DB by hand.
-- Run `python3 crm/ob.py dashboard` after any batch of changes.
+- After any batch of changes, refresh the live dashboard: `python3 crm/ob.py dashboard --artifact --out data/dashboard-site.html`, then publish that file with the Artifact tool to https://claude.ai/artifact/1VW4dQU9Jw6z4ppgEUB1k2 (pass it as `url` from a new conversation). It is private to Dave and holds contact names, so never share it without asking.
 - Tests: `python3 -m unittest discover -s tests`.

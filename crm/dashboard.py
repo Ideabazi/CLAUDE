@@ -3,29 +3,46 @@ from __future__ import annotations
 
 import json
 
-TEMPLATE = r"""<!doctype html>
+# The page body is written without <html>/<head>/<body> so the same markup can be
+# published as a claude.ai Artifact (which supplies that skeleton) or wrapped for a local file.
+STANDALONE = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Outreach CRM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+__PAGE__
+</body>
+</html>
+"""
+
+TEMPLATE = r"""<title>Ideabazi Outreach CRM</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <style>
 :root {
   --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e4e4df;
   --accent: #2f5bd3; --good: #1f8a5b; --warn: #b7791f; --bad: #c0392b; --chip: #eef1fb;
+  --on-good: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #121212; --panel: #1b1b1b; --ink: #ececea; --muted: #9a9a94; --line: #2c2c2a;
     --accent: #7b9cff; --good: #4cc38a; --warn: #e0a84a; --bad: #ef6b5b; --chip: #232a3d;
+    color-scheme: dark;
   }
 }
+:root[data-theme="dark"] {
+  --bg: #121212; --panel: #1b1b1b; --ink: #ececea; --muted: #9a9a94; --line: #2c2c2a;
+  --accent: #7b9cff; --good: #4cc38a; --warn: #e0a84a; --bad: #ef6b5b; --chip: #232a3d;
+  color-scheme: dark;
+}
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
-header { padding: 20px 16px 8px; max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+body { margin: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--bg); color: var(--ink); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+header { padding-block: 20px 8px; max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: baseline; }
 h1 { font-size: 20px; margin: 0; }
 h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
-main { max-width: 1280px; margin: 0 auto; padding: 8px 16px 40px; display: grid; gap: 16px; }
+main { max-width: 1280px; margin: 0 auto; padding-block: 8px 40px; display: grid; gap: 16px; }
 .muted { color: var(--muted); }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; overflow: hidden; }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
@@ -41,7 +58,7 @@ th { font-size: 12px; color: var(--muted); font-weight: 600; cursor: pointer; wh
 .scroll { overflow-x: auto; }
 .chip { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--chip); font-size: 12px; white-space: nowrap; }
 .s-replied, .s-meeting_booked, .s-meeting_held, .s-proposal { color: var(--good); }
-.s-won { background: var(--good); color: #fff; }
+.s-won { background: var(--good); color: var(--on-good); }
 .s-lost, .s-opted_out, .s-disqualified { color: var(--bad); }
 .overdue { color: var(--bad); font-weight: 600; }
 .board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 6px; }
@@ -52,12 +69,14 @@ th { font-size: 12px; color: var(--muted); font-weight: 600; cursor: pointer; wh
 input, select { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); }
 .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 a { color: var(--accent); }
+.grid2 > * { min-width: 0; }
+.demo { max-width: 1280px; margin: 12px auto 0; padding: 8px 12px; border: 1px dashed var(--warn); border-radius: 8px; color: var(--warn); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
-</head>
-<body>
+<div class="demo" id="demo" hidden>Sample data: 40 fictional contacts and three weeks of simulated outreach. Your real pipeline replaces this once your LinkedIn connections are loaded.</div>
 <header>
   <h1>Outreach CRM <span class="muted" style="font-weight:400">· __OWNER__</span></h1>
-  <span class="muted">Generated __GENERATED__ · regenerate with <code>python3 crm/ob.py dashboard</code></span>
+  <span class="muted">Updated __GENERATED__</span>
 </header>
 <main>
   <section class="kpis" id="kpis"></section>
@@ -89,6 +108,7 @@ a { color: var(--accent); }
 </main>
 <script>
 const D = __DATA__;
+if (D.contacts.length && D.contacts.every(c => c.source === "demo")) document.getElementById("demo").hidden = false;
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const today = new Date().toISOString().slice(0, 10);
 const m = (D.metrics.all && D.metrics.all[0]) || {contacted:0, connects:0, accepted:0, replied:0, positive:0, booked:0, held:0, won:0};
@@ -159,13 +179,12 @@ function renderAll() {
 ["q", "fstage", "fdeg"].forEach(id => document.getElementById(id).addEventListener("input", renderAll));
 renderAll();
 </script>
-</body>
-</html>
 """
 
 
-def render(data: dict) -> str:
+def render(data: dict, artifact: bool = False) -> str:
     payload = json.dumps(data, default=str).replace("</", "<\\/")
-    return (TEMPLATE.replace("__DATA__", payload)
+    page = (TEMPLATE.replace("__DATA__", payload)
             .replace("__OWNER__", data["owner"]["name"])
             .replace("__GENERATED__", data["generated"].replace("T", " ")))
+    return page if artifact else STANDALONE.replace("__PAGE__", page)

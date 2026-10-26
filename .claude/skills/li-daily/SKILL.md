@@ -27,7 +27,7 @@ Show `data/queue-<date>.md` grouped by channel, in this order: **connect request
 When Dave confirms ("sent all", "sent all except li-0012"), run `python3 crm/ob.py log <id> sent` for each, adding `--variant A|B` if the icebreaker differs from the stored choice. Unsent touches stay due and roll to tomorrow.
 
 ## 5. Close
-`python3 crm/ob.py dashboard` and `python3 crm/ob.py metrics`. Give a 3-line summary: touches sent today, replies and meetings so far this week, and the one thing to fix (for example "accept rate 18% on 2nd-degree, so test icebreaker B in the connect note").
+Refresh the live dashboard (see CLAUDE.md: `ob dashboard --artifact --out data/dashboard-site.html`, then republish it to Dave's dashboard URL) and run `python3 crm/ob.py metrics`. Give a 3-line summary: touches sent today, replies and meetings so far this week, and the one thing to fix (for example "accept rate 18% on 2nd-degree, so test icebreaker B in the connect note").
 
 ## Scheduled (unattended) runs
 Steps 1 (email only), 2 and 5 only. Prepare the queue and the drafts list, but send nothing, create no drafts and perform no LinkedIn actions.

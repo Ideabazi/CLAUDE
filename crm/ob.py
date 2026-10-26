@@ -638,8 +638,8 @@ def cmd_dashboard(args) -> None:
         "metrics": {by or "all": compute_metrics(con, None, by) for by in (None, "degree", "route", "variant")},
         "queue_file": queue_md.name if queue_md.exists() else None,
     }
-    out = OUT / "dashboard.html"
-    out.write_text(render(data))
+    out = Path(args.out) if args.out else OUT / "dashboard.html"
+    out.write_text(render(data, artifact=args.artifact))
     print(f"dashboard: {rel(out)}  (open in a browser; contains PII — kept out of git)")
 
 
@@ -708,7 +708,10 @@ def main(argv=None) -> None:
     s = sub.add_parser("export", help="export contacts to CSV")
     s.add_argument("path"); s.set_defaults(fn=cmd_export)
 
-    sub.add_parser("dashboard", help="render data/dashboard.html").set_defaults(fn=cmd_dashboard)
+    s = sub.add_parser("dashboard", help="render data/dashboard.html")
+    s.add_argument("--artifact", action="store_true", help="omit the html/head/body wrapper (for publishing as a claude.ai Artifact)")
+    s.add_argument("--out", help="output path (default: next to the database)")
+    s.set_defaults(fn=cmd_dashboard)
 
     args = p.parse_args(argv)
     if args.cmd != "init" and not DB_PATH.exists():
