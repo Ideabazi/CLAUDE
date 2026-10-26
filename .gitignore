@@ -1,0 +1,9 @@
+# Prospect data (PII) — never commit
+data/*
+!data/.gitkeep
+!data/imports/
+data/imports/*
+!data/imports/.gitkeep
+__pycache__/
+*.pyc
+.DS_Store

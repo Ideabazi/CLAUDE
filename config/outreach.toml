@@ -1,0 +1,97 @@
+# Ideabazi LinkedIn Outreach — configuration
+# Edit this file to change targeting, safety caps and cadence.
+# The CLI (crm/ob.py) and the Claude skills in .claude/skills/ both read it.
+
+[owner]
+name = "Dave Banerjee"
+company = "Ideabazi Ventures LLC"
+title = "CEO & Founder"
+linkedin = "https://www.linkedin.com/in/davebanerjee"
+booking_url = "https://cal.com/ideabazi-daveb/30min"
+email = "dave@ideabazi.com"
+timezone = "America/Los_Angeles"
+
+# ---------------------------------------------------------------------------
+# ICP — who counts as a target. Keep it to a handful of hard filters;
+# the nuance belongs in research scoring, not in regexes.
+# ---------------------------------------------------------------------------
+[icp]
+# Decision-maker titles (case-insensitive regex, matched against the headline/position)
+title_include = '\b(founder|co-?founder|ceo|chief executive|president|owner|co-?owner|managing (partner|director|member)|proprietor)\b'
+# Titles that look like a match but are not the economic buyer
+title_exclude = '\b(vice president|vp|svp|evp|assistant|intern|former|ex-|retired|student|aspiring|board member|advisor|adviser|investor|chief of staff|product owner|process owner|business owner liaison)\b'
+# Geography: a contact passes if its location/country contains any of these
+us_markers = ["united states", "usa", "u.s.", ", us", "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming", "san francisco bay", "greater boston", "dallas-fort worth", "new york city"]
+# SMB / mid-market headcount band
+employees_min = 5
+employees_max = 500
+
+# ---------------------------------------------------------------------------
+# Offer routes — map a prospect to the Ideabazi service that fits best.
+# VERIFY against ideabazi.com before each campaign; only cite what's live.
+# ---------------------------------------------------------------------------
+[[routes]]
+slug = "obdg"
+name = "Outbound & Demand Gen (fractional CMO/CRO, Pipeline Audit, Lead Engine Build)"
+industry_keywords = ["saas", "software", "technology", "internet", "it services", "marketing", "advertising", "agency", "consulting", "professional services", "staffing", "fintech", "martech", "data", "cybersecurity"]
+pains = ["founder still doing all the selling", "pipeline depends on referrals", "new sales hire with no playbook", "CRM is a graveyard", "inconsistent month-to-month revenue"]
+triggers = ["first sales/marketing hire posted", "recent funding", "new revenue leader", "launched new product/tier", "founder posting about growth or hiring"]
+gift = "3-fix GTM / pipeline teardown"
+
+[[routes]]
+slug = "aiweb"
+name = "AI-Visible Websites (AI Visibility Snapshot)"
+industry_keywords = ["association", "nonprofit", "accounting", "legal", "law practice", "architecture", "engineering", "construction", "manufacturing", "healthcare", "medical practice", "financial services", "insurance", "real estate", "logistics"]
+pains = ["dated website", "not cited by ChatGPT/Perplexity/AI Overviews", "forms not wired to a CRM", "weak technical SEO"]
+triggers = ["rebrand or new leadership", "website older than 3 years", "competitor shows up in AI answers", "new service line"]
+gift = "3-fix AI-visibility snapshot"
+
+# ---------------------------------------------------------------------------
+# Safety caps — LinkedIn restricts accounts that look automated.
+# These are per-day ceilings the daily planner will never exceed.
+# ---------------------------------------------------------------------------
+[caps]
+connect_requests_per_day = 15     # LinkedIn's weekly invite ceiling is ~100; stay well under
+connect_requests_per_week = 80
+linkedin_dms_per_day = 25
+emails_per_day = 20               # matches the Apollo guardrail in ideabazi-outbound
+profile_views_per_run = 25
+min_hours_between_touches = 48
+default_new_starts_per_day = 10   # override any day with: ob plan --volume N
+
+# ---------------------------------------------------------------------------
+# Sequences. day = offset from the first touch. channel = linkedin_connect |
+# linkedin_dm | email. Steps whose channel isn't available for a contact
+# (no email, connect not accepted) are skipped automatically.
+# ---------------------------------------------------------------------------
+[sequences.first_degree]
+description = "Already connected: DM-first, gift up front"
+steps = [
+  { day = 0,  channel = "linkedin_dm", angle = "Icebreaker + gift, one question (<80 words)" },
+  { day = 4,  channel = "email",       angle = "Gift delivered / summary of the gift (<120 words)" },
+  { day = 9,  channel = "linkedin_dm", angle = "Comparable result or useful insight (<60 words)" },
+  { day = 16, channel = "email",       angle = "Something useful that asks for nothing (<80 words)" },
+  { day = 23, channel = "linkedin_dm", angle = "Clean close-out, door open, booking link (<40 words)" },
+]
+
+[sequences.second_degree]
+description = "2nd-degree: warm connect, then DM, email in parallel if verified"
+steps = [
+  { day = 0,  channel = "linkedin_connect", angle = "No pitch; reference the icebreaker fact (<300 chars)" },
+  { day = 3,  channel = "linkedin_dm",      angle = "Thanks for connecting + gift offer, one question (<80 words)" },
+  { day = 5,  channel = "email",            angle = "Icebreaker + gift + one ask (<120 words)" },
+  { day = 10, channel = "linkedin_dm",      angle = "Comparable result (<60 words)" },
+  { day = 16, channel = "email",            angle = "Useful, no ask (<80 words)" },
+  { day = 23, channel = "email",            angle = "Clean close-out (<40 words)" },
+]
+
+[sequences.third_degree]
+description = "3rd+/cold: email-led, LinkedIn as a supporting channel"
+steps = [
+  { day = 0,  channel = "email",            angle = "Icebreaker + gift + one ask (<120 words)" },
+  { day = 2,  channel = "linkedin_connect", angle = "No pitch; reference the icebreaker fact (<300 chars)" },
+  { day = 5,  channel = "email",            angle = "Comparable result (<60 words)" },
+  { day = 9,  channel = "linkedin_dm",      angle = "Point to the gift; one question (<60 words)" },
+  { day = 14, channel = "email",            angle = "Useful, no ask (<80 words)" },
+  { day = 21, channel = "email",            angle = "Clean close-out (<40 words)" },
+]
