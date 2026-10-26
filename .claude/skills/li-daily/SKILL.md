@@ -20,7 +20,7 @@ Dave decides the volume. Claude does the prep, the bookkeeping and the measureme
 
 ## 3. Hand over
 Show `data/queue-<date>.md` grouped by channel, in this order: **connect requests** (paste the note), **DMs**, then **emails**. For each touch, give the profile link and the exact copy.
-- Email touches: offer to create Gmail drafts from dave@ideabazi.com with the signature appended (ideabazi-outbound gate d, one yes per batch). For Path B volume, use the Apollo flow in ideabazi-outbound instead.
+- Email touches: offer to create Gmail drafts from dave@ideabazi.com with the signature appended (ideabazi-outbound gate d, one yes per batch). No Apollo (client account): higher email volume waits for a sending tool of Dave's own.
 - LinkedIn touches: Dave sends by hand. Claude may send connection requests in Dave's live browser only under ideabazi-outbound **hard rule 6**: a per-batch yes, 8 per day or fewer, 3–6 minutes apart, never unattended, and stop on any checkpoint. DMs are always sent by Dave.
 
 ## 4. Log
