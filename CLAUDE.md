@@ -7,7 +7,7 @@ A local CRM plus Claude skills that run Dave Banerjee's (Ideabazi Ventures) Link
 - `crm/schema.sql` — contacts, messages (drafted copy per sequence step), touches (every event)
 - `crm/dashboard.py` — renders `data/dashboard.html`
 - `config/outreach.toml` — ICP, offer routes, safety caps, sequences. **Single source of truth.**
-- `.claude/skills/` — `li-source` → `li-research` → `li-daily` → `li-log` → `li-review`
+- `.claude/skills/` — `li-source` → `li-research` → `li-daily` → `li-log` → `li-review`; `li-autopilot` is the scheduled daily run (10 new prospects/day from Clay, 7 days/week)
 - `data/` — the database, imports, queues, research JSON and dashboard. **Git-ignored: it holds PII. Never commit it.**
 
 ## Pipeline stages
@@ -18,5 +18,5 @@ new → qualified | disqualified → researched → ready (approved copy) → in
 - **Do not use Apollo.** The connected Apollo account belongs to a client, so don't read from or write to it, even where a skill (including ideabazi-outbound) lists Apollo. Use Clay / FullEnrich / Vibe Prospecting (after confirming the account is Dave's) or Sales Navigator instead.
 - No LinkedIn scraping, no bulk profile crawling, no cookie or session automation tools. Data comes from LinkedIn's own data export, Sales Navigator exports, and Clay/FullEnrich/Vibe.
 - Every state change goes through `ob.py` (`log`, `research-in`, `approve`). Never edit the DB by hand.
-- After any batch of changes, refresh the live dashboard: `python3 crm/ob.py dashboard --artifact --out data/dashboard-site.html`, then publish that file with the Artifact tool to https://claude.ai/artifact/1VW4dQU9Jw6z4ppgEUB1k2 (pass it as `url` from a new conversation). It is private to Dave and holds contact names, so never share it without asking.
+- After any batch of changes, refresh the live dashboard: `python3 crm/ob.py dashboard --artifact --out data/dashboard-site.html`, then publish that file with the Artifact tool to https://claude.ai/artifact/1VW4dQU9Jw6z4ppgEUB1k2 (pass it as `url` from a new conversation). It is private to Dave and holds contact names, so never share it without asking. The page also embeds the full CRM as a backup: on a fresh container, `python3 crm/ob.py restore <file from Artifact read>` rebuilds `data/crm.db`.
 - Tests: `python3 -m unittest discover -s tests`.

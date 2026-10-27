@@ -64,6 +64,19 @@ class CrmFlow(unittest.TestCase):
         self.assertEqual(self.show("li-0006")["stage"], "replied")
         self.assertIn("100%", self.run_ob("metrics"))
 
+    def test_backup_round_trip_through_dashboard(self):
+        self.run_ob("import-linkedin", "examples/sample_connections.csv")
+        self.run_ob("qualify")
+        self.run_ob("log", "li-0001", "note", "--note", "has </script> in it")
+        page = Path(self.tmp.name) / "page.html"
+        self.run_ob("dashboard", "--artifact", "--out", str(page))
+        fresh = os.environ | {"OB_DB": str(Path(self.tmp.name) / "fresh" / "t.db")}
+        r = subprocess.run(OB + ["restore", str(page)], env=fresh, capture_output=True, text=True, cwd=ROOT)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("5 contacts", r.stdout)
+        r = subprocess.run(OB + ["show", "li-0001"], env=fresh, capture_output=True, text=True, cwd=ROOT)
+        self.assertIn("</script>", json.loads(r.stdout)["touches"][0]["detail"])
+
 
 if __name__ == "__main__":
     unittest.main()

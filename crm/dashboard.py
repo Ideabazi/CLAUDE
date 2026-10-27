@@ -182,9 +182,11 @@ renderAll();
 """
 
 
-def render(data: dict, artifact: bool = False) -> str:
+def render(data: dict, artifact: bool = False, backup: str | None = None) -> str:
     payload = json.dumps(data, default=str).replace("</", "<\\/")
     page = (TEMPLATE.replace("__DATA__", payload)
             .replace("__OWNER__", data["owner"]["name"])
             .replace("__GENERATED__", data["generated"].replace("T", " ")))
+    if backup:
+        page += '\n<script type="application/json" id="crm-backup">' + backup.replace("</", "<\\/") + "</script>\n"
     return page if artifact else STANDALONE.replace("__PAGE__", page)

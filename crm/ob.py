@@ -620,6 +620,42 @@ def cmd_export(args) -> None:
     print(f"exported {len(rows)} contacts to {path}")
 
 
+# --------------------------------------------------------------------------- backup
+
+TABLES = ("contacts", "messages", "touches")
+BACKUP_RE = re.compile(r'<script type="application/json" id="crm-backup">(.*?)</script>', re.S)
+
+
+def dump_db(con) -> dict:
+    return {"version": 1, "exported_at": now_iso(),
+            **{t: [dict(r) for r in con.execute(f"SELECT * FROM {t}")] for t in TABLES}}
+
+
+def cmd_backup(args) -> None:
+    con = connect()
+    Path(args.path).write_text(json.dumps(dump_db(con), default=str))
+    print(f"backup written: {args.path}")
+
+
+def cmd_restore(args) -> None:
+    """Restore from a backup JSON, or from a dashboard HTML page that embeds one."""
+    text = Path(args.path).read_text()
+    m = BACKUP_RE.search(text)
+    data = json.loads(m.group(1).replace("<\\/", "</") if m else text)
+    con = connect()
+    con.executescript(SCHEMA_PATH.read_text())
+    if con.execute("SELECT COUNT(*) FROM contacts").fetchone()[0] and not args.force:
+        die("database is not empty; pass --force to replace it")
+    for t in reversed(TABLES):
+        con.execute(f"DELETE FROM {t}")
+    for t in TABLES:
+        for row in data.get(t, []):
+            cols = ", ".join(row)
+            con.execute(f"INSERT INTO {t} ({cols}) VALUES ({', '.join('?' * len(row))})", tuple(row.values()))
+    con.commit()
+    print(f"restored {', '.join(f'{len(data.get(t, []))} {t}' for t in TABLES)} (exported {data.get('exported_at')})")
+
+
 # --------------------------------------------------------------------------- dashboard
 
 def cmd_dashboard(args) -> None:
@@ -639,7 +675,9 @@ def cmd_dashboard(args) -> None:
         "queue_file": queue_md.name if queue_md.exists() else None,
     }
     out = Path(args.out) if args.out else OUT / "dashboard.html"
-    out.write_text(render(data, artifact=args.artifact))
+    # The artifact page doubles as the durable copy of the CRM: scheduled runs restore from it.
+    backup = json.dumps(dump_db(con), default=str) if args.artifact else None
+    out.write_text(render(data, artifact=args.artifact, backup=backup))
     print(f"dashboard: {rel(out)}  (open in a browser; contains PII — kept out of git)")
 
 
@@ -708,13 +746,21 @@ def main(argv=None) -> None:
     s = sub.add_parser("export", help="export contacts to CSV")
     s.add_argument("path"); s.set_defaults(fn=cmd_export)
 
+    s = sub.add_parser("backup", help="write the whole CRM to a JSON file")
+    s.add_argument("path"); s.set_defaults(fn=cmd_backup)
+
+    s = sub.add_parser("restore", help="restore the CRM from a backup JSON or a published dashboard page")
+    s.add_argument("path")
+    s.add_argument("--force", action="store_true", help="replace a non-empty database")
+    s.set_defaults(fn=cmd_restore)
+
     s = sub.add_parser("dashboard", help="render data/dashboard.html")
     s.add_argument("--artifact", action="store_true", help="omit the html/head/body wrapper (for publishing as a claude.ai Artifact)")
     s.add_argument("--out", help="output path (default: next to the database)")
     s.set_defaults(fn=cmd_dashboard)
 
     args = p.parse_args(argv)
-    if args.cmd != "init" and not DB_PATH.exists():
+    if args.cmd not in ("init", "restore") and not DB_PATH.exists():
         die("no database yet — run: python3 crm/ob.py init")
     args.fn(args)
 

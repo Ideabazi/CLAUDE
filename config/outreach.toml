@@ -57,7 +57,7 @@ linkedin_dms_per_day = 25
 emails_per_day = 20               # matches the Apollo guardrail in ideabazi-outbound
 profile_views_per_run = 25
 min_hours_between_touches = 48
-default_new_starts_per_day = 10   # override any day with: ob plan --volume N
+default_new_starts_per_day = 10   # Dave, 27 Oct 2026: 10 a day, 7 days a week
 
 # ---------------------------------------------------------------------------
 # Sequences. day = offset from the first touch. channel = linkedin_connect |
