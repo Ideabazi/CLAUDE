@@ -18,9 +18,10 @@ timezone = "America/Los_Angeles"
 [icp]
 # Decision-maker = owner or C-suite (Dave, 27 Oct 2026: "no non-CXO people").
 # Case-insensitive regex matched against the title/headline.
-title_include = '\b(founder|co-?founder|ceo|chief [a-z& ]*officer|c[eorm]o|cfo|cio|cto|cxo|president|owner|co-?owner|managing (partner|director|member)|proprietor)\b'
-# Titles that look like a match but are not the economic buyer
-title_exclude = '\b(vice president|vp|svp|evp|avp|assistant|associate|intern|former|ex-|retired|student|aspiring|board member|advisor|adviser|investor|chief of staff|office of the ceo|to the ceo|product owner|process owner|business owner liaison|head of|manager|lead|director of)\b'
+title_include = '\b(founder|co-?founder|owner|co-?owner|ceo|chief [a-z& ]*officer|c[eorm]o|cfo|cio|cto|cxo|managing (partner|director|member)|proprietor|(?<!vice )(?<!vice-)president)\b'
+# A title needs one of the owner/C-suite words above ("VP Sales", "Head of Growth" have none).
+# These disqualify even when one is present: former roles, support roles, outsiders.
+title_exclude = '\b(former|ex-|assistant|intern|retired|student|aspiring|board member|advisor|adviser|investor|chief of staff|office of the ceo|to the ceo|product owner|process owner|business owner liaison)\b'
 
 # Allowed geographies (Dave, 27 Oct 2026). A contact passes when its location
 # or country contains any marker of any region. Unknown location = not yet qualified.

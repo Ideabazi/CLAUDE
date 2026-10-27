@@ -25,6 +25,13 @@ Dave can mark contacts on the dashboard: replied, booked, held, proposal, won, l
 ## 1. Sync replies (email only; LinkedIn is Dave's)
 For each `in_sequence` contact with an email, search Gmail for mail from that address since `last_touch_at`. Log replies with `li-log` rules. Skip this step if Gmail isn't connected, and say so in the report.
 
+## 2a. Work Dave's imported lists first (no sourcing while the pool is full)
+Run `python3 crm/ob.py list --stage qualified --json --limit 500`. If **20 or more** qualified contacts are waiting (for example from Dave's Clay list `clay-marketing-cxo`, imported 27 Oct 2026), skip step 2 today.
+- Take the 10 best: companies with 10–200 staff first, then those with no recorded past contact.
+- Enrich them with the same Clay data points: company Open Jobs, Recent News and Latest Funding, plus the contact's Recent LinkedIn Posts. Use `search-contacts` with their company domain to get a taskId first.
+- Then go straight to step 3.
+- Only source new prospects (step 2) when fewer than 20 are waiting.
+
 ## 2. Source 10 new prospects (Clay, Dave's "Ideabazi" workspace)
 - **Check the workspace first:** `get-current-workspace` must return "Ideabazi". If it returns anything else, stop. **Never use Apollo.**
 - **Company search** (free). Use `industry`, `company_size in ("11-50","51-200")`, `company_type = "Privately Held"`, `year_founded >= 2016`, and `products_and_services is_similar_to (...)`. Exclude `description contains ("outsourcing","offshore","staff augmentation","development services")`. The company search has no country filter, so keep rows whose returned `country` is in Dave's regions: United States, any European country (UK, EU, Switzerland, Norway, Ireland, etc.), Australia, United Arab Emirates (Dubai), Saudi Arabia, Singapore. Aim for roughly 5 USA, 3 Europe/UK/Ireland/Norway and 2 from Australia, UAE, Saudi Arabia or Singapore each day.
