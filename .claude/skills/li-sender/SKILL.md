@@ -16,7 +16,8 @@ Nothing else: no likes, comments, follows, InMail, posts, emails, edits to copy,
 2. **Restore the CRM.** Read https://claude.ai/artifact/1VW4dQU9Jw6z4ppgEUB1k2 with the Artifact tool (`action: "read"`), then run `python3 crm/ob.py restore <saved file> --force`.
    - If this fails, stop and report. Never send from a missing or stale CRM: double-sends are the worst outcome here.
 3. **Open the browser.**
-   - Load the `built-in-browser` skill, then load all the `mcp__remote-devices__Claude_Browser__*` tools in one ToolSearch call.
+   - Use whichever browser tool this session has, in this order: Claude in Chrome (`chrome-browser` skill), the desktop app's built-in browser (`built-in-browser` skill), or `mcp__remote-devices__Claude_Browser__*`. Load its tools in one ToolSearch call.
+   - It must be Dave's own browser, already signed in to LinkedIn. Never open a fresh or headless browser (Playwright etc.): it isn't signed in and looks automated.
    - Open https://www.linkedin.com/feed/ and resize the window to 1440x1000.
    - If the browser is unreachable (desktop app closed, computer asleep) or LinkedIn isn't signed in, stop and report. Never enter credentials.
 
