@@ -51,9 +51,9 @@ gift = "3-fix AI-visibility snapshot"
 # These are per-day ceilings the daily planner will never exceed.
 # ---------------------------------------------------------------------------
 [caps]
-connect_requests_per_day = 15     # LinkedIn's weekly invite ceiling is ~100; stay well under
+connect_requests_per_day = 8      # Claude sends from Dave's browser (Dave, 27 Oct 2026); LinkedIn's weekly ceiling is ~100
 connect_requests_per_week = 80
-linkedin_dms_per_day = 25
+linkedin_dms_per_day = 20         # Dave, 27 Oct 2026
 emails_per_day = 20               # matches the Apollo guardrail in ideabazi-outbound
 profile_views_per_run = 25
 min_hours_between_touches = 48

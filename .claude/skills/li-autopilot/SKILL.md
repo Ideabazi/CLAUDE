@@ -5,14 +5,14 @@ description: The scheduled daily outreach run. Restore the CRM, sync replies, so
 
 # li-autopilot — the daily unattended run
 
-Dave's settings (27 Oct 2026): **10 new prospects a day, 7 days a week**, Clay enrichment approved. Nothing is sent: Dave approves the copy and sends LinkedIn touches himself. This run prepares everything up to the send.
+Dave's settings (27 Oct 2026): **10 new prospects a day, 7 days a week**, Clay enrichment approved, **copy auto-approved** when it scores 15+ and passes every check. This run sends nothing; the `li-sender` run at 10:10am PT sends the approved touches from Dave's browser.
 
 ## 0. Set up (every run)
 1. `cd` to the repo. Make sure you're on `claude/youthful-euler-drnd4o` and current: `git fetch origin claude/youthful-euler-drnd4o && git checkout claude/youthful-euler-drnd4o && git pull --ff-only`.
-2. If `data/crm.db` is missing (a fresh container), restore it from the dashboard:
+2. **Always** restore from the dashboard, because the sender run updates it after this session last saw it:
    - Read https://claude.ai/artifact/1VW4dQU9Jw6z4ppgEUB1k2 with the Artifact tool (`action: "read"`) and note the saved file it names.
-   - Run `python3 crm/ob.py restore <that file>`.
-   - If the read or restore fails, **stop**. Report the failure to Dave. Never start from an empty CRM: duplicates and lost history cost more than a skipped day.
+   - Run `python3 crm/ob.py restore <that file> --force`.
+   - If the read or restore fails, **stop**. Report the failure to Dave. Never start from an empty or stale CRM: duplicates and lost history cost more than a skipped day.
 3. Run `python3 -m unittest discover -s tests` and stop if it fails.
 
 ## 1. Sync replies (email only; LinkedIn is Dave's)
@@ -43,10 +43,10 @@ For each `in_sequence` contact with an email, search Gmail for mail from that ad
 - **Score each prospect.** Signal without a date = 1. Total under 15 → `nurture`, no copy.
 - **Contacts with no verified email:** set `"sequence": "second_degree"` and draft steps 0 (connect note, 300 characters or fewer), 1 (DM on accept, 80 words or fewer) and 3 (DM day 10, 60 words or fewer). Alternate `icebreaker_choice` A/B.
 - **Validate before loading.** Every icebreaker is 20 words or fewer, with no banned words, no em dashes and no exclamation marks. Respect each step's ceiling. The script pattern is in `data/research/*.json` history.
-- **Load and leave at `researched`:** `research-in data/research/<date>-autopilot.json`. Never `approve`; approval is Dave's.
+- **Load and approve:** run `research-in data/research/<date>-autopilot.json`, then `approve` every new contact scoring 15+ whose copy passed validation (Dave's standing approval, 27 Oct 2026). Anything that failed a check stays `researched` and goes in the report.
 
 ## 4. Queue
-Run `python3 crm/ob.py plan` with the default volume of 10 new starts. It only starts contacts Dave has approved, so yesterday's approvals go out today. Follow-ups are added automatically.
+Run `python3 crm/ob.py plan` with the default volume of 10 new starts, so the report can preview the day. The sender run re-plans at 10:10am and does the sending. The caps (8 connects, 20 messages) hold any overflow for later days.
 
 ## 5. Publish and back up
 1. Run `python3 crm/ob.py dashboard --artifact --out data/dashboard-site.html`.
@@ -55,14 +55,14 @@ Run `python3 crm/ob.py plan` with the default volume of 10 new starts. It only s
 
 ## 6. Report to Dave (short)
 - **New today:** how many found, researched and nurtured, with the top 3 (name, company, one-line signal).
-- **Waiting for approval:** the IDs plus Icebreaker A for each. Ask him to reply "approve li-00xx …" or send edits.
-- **Today's queue:** counts by channel, and the location of the copy (`data/queue-<date>.md`). Ask him to reply "sent all" when done.
+- **Auto-approved today:** the IDs plus the icebreaker in use. Say: "These send at 10:10am PT; reply 'hold li-00xx' to stop any of them."
+- **Today's queue:** counts by channel. Remind him the Claude desktop app must be open at 10:10am PT for the sender run.
 - **Replies or meetings** since yesterday.
 - **Clay data points used today.**
 - **On Fridays,** also run `li-review` and add its one recommended change.
 
 ## Never
-- Send, connect, DM or post on LinkedIn, or create Gmail drafts, in this unattended run.
+- Send, connect, DM or post on LinkedIn, or create Gmail drafts, in this run (sending is `li-sender`'s job).
 - Use Apollo.
 - Enrich more than 10 new prospects a day.
 - Invent a signal, a fact or a mutual connection.

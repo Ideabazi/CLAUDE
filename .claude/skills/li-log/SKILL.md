@@ -21,6 +21,7 @@ description: Turn Dave's plain-English updates about prospects into CRM events. 
 | had the call | `log <id> held --note "<outcome, next step>"` |
 | sent proposal / won / lost | `log <id> proposal|won|lost --note "..."` |
 | unsubscribe / stop / bounced | `log <id> optout` or `log <id> bounce` |
+| "hold li-00xx" (don't send) | `log <id> nurture --note "held by Dave"`; the sender run won't touch it |
 
 3. Confirm back in one line per contact.
 4. For a positive reply, draft the response. Interested → two concrete time options plus `https://cal.com/ideabazi-daveb/30min`. Question → answer it in 60 words or fewer, then a soft ask. Dave sends it.
