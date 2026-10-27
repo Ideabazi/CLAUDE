@@ -276,6 +276,59 @@ def region_of(icp, c) -> str | None | bool:
 OPEN_STAGES = ("new", "qualified", "disqualified", "researched", "ready", "in_sequence", "nurture")
 
 
+def cmd_audit(args) -> None:
+    """Score exported lists (Clay tables, Sales Navigator, etc.) against the ICP without importing them."""
+    from collections import Counter
+    cfg = load_config()
+    icp = cfg["icp"]
+    inc, exc = re.compile(icp["title_include"], re.I), re.compile(icp["title_exclude"], re.I)
+    con = connect()
+    known = {r[0] for r in con.execute("SELECT linkedin_url FROM contacts WHERE linkedin_url IS NOT NULL")}
+    for path in args.paths:
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            rows = [map_row(r) for r in csv.DictReader(f)]
+        rows = [r for r in rows if r.get("first_name") or r.get("linkedin_url")]
+        tally, regions, bad_titles = Counter(), Counter(), Counter()
+        for r in rows:
+            title = r.get("title") or ""
+            cxo = bool(inc.search(title)) and not exc.search(title)
+            region = region_of(icp, {"location": r.get("location"), "country": r.get("country")})
+            emp = r.get("employees")
+            size_ok = None if emp is None else icp["size"]["employees_min"] <= emp <= icp["size"]["employees_max"]
+            if norm_url(r.get("linkedin_url")) in known:
+                tally["already in CRM"] += 1
+            if not cxo:
+                tally["not owner/C-suite"] += 1
+                bad_titles[title.strip().lower()[:40] or "(no title)"] += 1
+            elif region is False:
+                tally["outside regions"] += 1
+            elif size_ok is False:
+                tally["company size outside 5-500"] += 1
+            elif region is None or size_ok is None:
+                tally["fits title, needs location/size"] += 1
+            else:
+                tally["ICP fit"] += 1
+                regions[region] += 1
+            tally["has LinkedIn URL"] += bool(r.get("linkedin_url"))
+            tally["has email"] += bool(r.get("email"))
+        n = len(rows) or 1
+        fit = tally["ICP fit"]
+        verdict = ("already loaded: every row is in the CRM" if tally["already in CRM"] == len(rows) else
+                   "outreach: import it" if fit / n >= 0.3 else
+                   "partial: import, the ICP filter drops the rest" if fit else
+                   "enrich first: titles fit but location/size are missing" if tally["fits title, needs location/size"] else
+                   "skip: almost nothing fits the ICP")
+        print(f"\n== {path}  ({len(rows)} people)")
+        for k in ("ICP fit", "fits title, needs location/size", "not owner/C-suite", "outside regions",
+                  "company size outside 5-500", "already in CRM", "has LinkedIn URL", "has email"):
+            print(f"  {k:<34} {tally[k]:>6}  {100 * tally[k] / n:5.1f}%")
+        if regions:
+            print("  ICP fit by region: " + ", ".join(f"{k} {v}" for k, v in regions.most_common()))
+        if bad_titles:
+            print("  most common non-CXO titles: " + "; ".join(f"{t} ({c})" for t, c in bad_titles.most_common(5)))
+        print(f"  verdict: {verdict}")
+
+
 def cmd_qualify(args) -> None:
     """ICP filter: owner/C-suite title, allowed region, headcount band. Sets fit + reach.
 
@@ -760,6 +813,9 @@ def main(argv=None) -> None:
 
     s = sub.add_parser("import-linkedin", help="import LinkedIn Connections.csv (1st-degree)")
     s.add_argument("path"); s.set_defaults(fn=cmd_import_linkedin)
+
+    s = sub.add_parser("audit", help="check exported lists against the ICP without importing")
+    s.add_argument("paths", nargs="+"); s.set_defaults(fn=cmd_audit)
 
     s = sub.add_parser("import-csv", help="import a Sales Navigator / Apollo / Clay CSV")
     s.add_argument("path")
