@@ -368,6 +368,9 @@ def cmd_qualify(args) -> None:
 
         if reasons:
             stage = "disqualified"
+        elif c["stage"] == "disqualified" and not c["disq_reason"]:
+            stage = "disqualified"  # disqualified by hand during research (e.g. acquired); keep it
+            reasons = None
         elif c["stage"] in ("new", "qualified", "disqualified"):
             stage = "qualified"
         else:
@@ -379,7 +382,7 @@ def cmd_qualify(args) -> None:
             "UPDATE contacts SET is_decision_maker=?, fit=?, reach=?, route=?, stage=?, disq_reason=?, "
             "next_touch_due=CASE WHEN ?='disqualified' THEN NULL ELSE next_touch_due END, "
             "country=COALESCE(country, ?), updated_at=? WHERE id=?",
-            (int(dm), min(fit, 5), reach, route, stage, ",".join(reasons) or None, stage,
+            (int(dm), min(fit, 5), reach, route, stage, ",".join(reasons or []) or None, stage,
              region or None, now_iso(), c["id"]),
         )
         stats[stage if stage in stats else "kept"] += 1
@@ -491,8 +494,11 @@ def accepted(con, cid) -> bool:
 
 def actionable_step(con, c, steps, start: int) -> int | None:
     """First step >= start the contact can actually receive."""
+    enabled = load_config().get("sending", {}).get("channels")
     for i in range(start, len(steps)):
         ch = steps[i]["channel"]
+        if enabled is not None and ch not in enabled:
+            continue  # nothing sends on this channel yet; don't let it stall the sequence
         if ch == "email" and not (c["email"] and c["email_status"] == "verified"):
             continue
         if ch == "linkedin_dm" and c["degree"] != 1 and not accepted(con, c["id"]):
@@ -559,7 +565,8 @@ def cmd_plan(args) -> None:
     ready = sorted(con.execute("SELECT * FROM contacts WHERE stage='ready'").fetchall(),
                    key=lambda c: (-score_total(c), c["degree"] or 9))
     # Re-running plan the same day must not start a second batch.
-    started = con.execute("SELECT COUNT(*) FROM contacts WHERE seq_started=?", (day.isoformat(),)).fetchone()[0]
+    started = con.execute("SELECT COUNT(*) FROM contacts WHERE seq_started=? AND stage NOT IN ('disqualified', 'nurture')",
+                          (day.isoformat(),)).fetchone()[0]
     for c in ready:
         if started >= volume:
             break
