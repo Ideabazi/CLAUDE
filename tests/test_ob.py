@@ -95,6 +95,29 @@ class CrmFlow(unittest.TestCase):
         self.assertEqual(self.show("li-0001")["stage"], "replied")
         self.assertEqual(self.show("li-0002")["stage"], "nurture")
 
+    def test_page_sent_and_accepted(self):
+        self.run_ob("import-linkedin", "examples/sample_connections.csv")
+        self.run_ob("import-csv", "examples/sample_salesnav.csv", "--source", "salesnav")
+        self.run_ob("qualify")
+        research = Path(self.tmp.name) / "r.json"
+        research.write_text(json.dumps([
+            {"id": "li-0006", "signal": 3, "pain": 3, "capacity": 3,
+             "messages": [{"step": 0, "channel": "linkedin_connect", "body": "note"},
+                          {"step": 1, "channel": "linkedin_dm", "body": "dm"}]}]))
+        self.run_ob("research-in", str(research))
+        self.run_ob("approve", "li-0006")
+        self.run_ob("plan", "--volume", "5", "--date", "2026-11-03")
+        acts = Path(self.tmp.name) / "a.json"
+        acts.write_text(json.dumps([
+            {"_id": "s1", "contact_id": "li-0006", "event": "sent", "created_at": "2026-11-03T18:00:00Z"},
+            {"_id": "s2", "contact_id": "li-0006", "event": "accepted", "created_at": "2026-11-04T18:00:00Z"},
+        ]))
+        out = json.loads(self.run_ob("apply-actions", str(acts)).strip().splitlines()[-1])
+        self.assertEqual(out["applied"], ["s1", "s2"])
+        c = self.show("li-0006")
+        self.assertEqual(c["step"], 1)
+        self.assertEqual(c["next_touch_due"], "2026-11-06")
+
     def test_backup_round_trip_through_dashboard(self):
         self.run_ob("import-linkedin", "examples/sample_connections.csv")
         self.run_ob("qualify")

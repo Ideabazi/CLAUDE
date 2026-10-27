@@ -709,7 +709,7 @@ def cmd_export(args) -> None:
 
 # --------------------------------------------------------------------------- page actions
 
-PAGE_EVENTS = {"replied", "booked", "held", "proposal", "won", "lost", "optout", "hold", "note"}
+PAGE_EVENTS = {"sent", "accepted", "replied", "booked", "held", "proposal", "won", "lost", "optout", "hold", "note"}
 
 
 def cmd_apply_actions(args) -> None:

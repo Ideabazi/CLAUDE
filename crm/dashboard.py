@@ -380,6 +380,7 @@ function closeRecord() { drawer.hidden = scrim.hidden = true; openId = null; }
    `ob apply-actions`, then mark them applied; the next publish shows the result. */
 let openId = null, actions = [], actionsDb = null, canWrite = false;
 const ACT = [
+  ["sent", "Sent next step myself"], ["accepted", "Accepted my invite"],
   ["replied", "Replied · interested", "interested"], ["replied", "Replied · question", "question"],
   ["replied", "Replied · not now", "not_now"], ["replied", "Replied · not interested", "not_interested"],
   ["booked", "Meeting booked"], ["held", "Meeting held"], ["proposal", "Proposal sent"],
