@@ -16,13 +16,25 @@ timezone = "America/Los_Angeles"
 # the nuance belongs in research scoring, not in regexes.
 # ---------------------------------------------------------------------------
 [icp]
-# Decision-maker titles (case-insensitive regex, matched against the headline/position)
-title_include = '\b(founder|co-?founder|ceo|chief executive|president|owner|co-?owner|managing (partner|director|member)|proprietor)\b'
+# Decision-maker = owner or C-suite (Dave, 27 Oct 2026: "no non-CXO people").
+# Case-insensitive regex matched against the title/headline.
+title_include = '\b(founder|co-?founder|ceo|chief [a-z& ]*officer|c[eorm]o|cfo|cio|cto|cxo|president|owner|co-?owner|managing (partner|director|member)|proprietor)\b'
 # Titles that look like a match but are not the economic buyer
-title_exclude = '\b(vice president|vp|svp|evp|assistant|intern|former|ex-|retired|student|aspiring|board member|advisor|adviser|investor|chief of staff|product owner|process owner|business owner liaison)\b'
-# Geography: a contact passes if its location/country contains any of these
-us_markers = ["united states", "usa", "u.s.", ", us", "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming", "san francisco bay", "greater boston", "dallas-fort worth", "new york city"]
-# SMB / mid-market headcount band
+title_exclude = '\b(vice president|vp|svp|evp|avp|assistant|associate|intern|former|ex-|retired|student|aspiring|board member|advisor|adviser|investor|chief of staff|office of the ceo|to the ceo|product owner|process owner|business owner liaison|head of|manager|lead|director of)\b'
+
+# Allowed geographies (Dave, 27 Oct 2026). A contact passes when its location
+# or country contains any marker of any region. Unknown location = not yet qualified.
+[icp.regions]
+usa = ["united states", "usa", "u.s.", ", us", "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming", "san francisco bay", "greater boston", "dallas-fort worth", "atlanta, georgia", "georgia, united states", "district of columbia"]
+europe = ["united kingdom", "england", "scotland", "wales", "london", "manchester", "germany", "berlin", "munich", "france", "paris", "netherlands", "amsterdam", "belgium", "brussels", "luxembourg", "switzerland", "zurich", "geneva", "austria", "vienna", "spain", "madrid", "barcelona", "portugal", "lisbon", "italy", "milan", "rome", "denmark", "copenhagen", "sweden", "stockholm", "finland", "helsinki", "iceland", "poland", "warsaw", "czechia", "czech republic", "prague", "estonia", "tallinn", "latvia", "lithuania", "greece", "athens", "hungary", "budapest", "romania", "croatia", "slovenia", "slovakia", "bulgaria", "malta", "cyprus"]
+norway = ["norway", "oslo", "bergen", "trondheim", "stavanger"]
+ireland = ["ireland", "dublin", "cork", "galway", "limerick"]
+australia = ["australia", "sydney", "melbourne", "brisbane", "perth", "adelaide", "canberra"]
+uae = ["dubai", "abu dhabi", "sharjah", "united arab emirates", "uae"]
+saudi_arabia = ["saudi arabia", "riyadh", "jeddah", "dammam", "khobar"]
+singapore = ["singapore"]
+
+[icp.size]
 employees_min = 5
 employees_max = 500
 

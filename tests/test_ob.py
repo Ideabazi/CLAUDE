@@ -37,6 +37,10 @@ class CrmFlow(unittest.TestCase):
         self.assertEqual(self.show("li-0007")["disq_reason"], "geo")
         self.assertEqual(self.show("li-0008")["disq_reason"], "size")
         self.assertEqual(self.show("li-0006")["degree"], 2)
+        # Allowed regions beyond the US; non-CXO titles never qualify
+        self.assertEqual(self.show("li-0009")["stage"], "qualified")
+        self.assertEqual(self.show("li-0009")["country"], "norway")
+        self.assertEqual(self.show("li-0010")["disq_reason"], "title")
 
         research = Path(self.tmp.name) / "r.json"
         research.write_text(json.dumps([
@@ -63,6 +67,18 @@ class CrmFlow(unittest.TestCase):
         self.run_ob("log", "li-0006", "replied", "--sentiment", "interested")
         self.assertEqual(self.show("li-0006")["stage"], "replied")
         self.assertIn("100%", self.run_ob("metrics"))
+
+    def test_enforce_disqualifies_worked_contacts(self):
+        self.run_ob("import-linkedin", "examples/sample_connections.csv")
+        self.run_ob("qualify")
+        research = Path(self.tmp.name) / "r.json"
+        research.write_text(json.dumps([{"id": "li-0001", "stage": "nurture"}]))
+        self.run_ob("research-in", str(research))
+        # li-0001 has no location: fine for a fresh import, not for someone being worked
+        self.run_ob("qualify", "--enforce")
+        c = self.show("li-0001")
+        self.assertEqual(c["stage"], "disqualified")
+        self.assertEqual(c["disq_reason"], "geo-unknown")
 
     def test_backup_round_trip_through_dashboard(self):
         self.run_ob("import-linkedin", "examples/sample_connections.csv")

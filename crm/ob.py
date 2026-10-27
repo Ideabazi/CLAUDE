@@ -262,54 +262,81 @@ def guess_route(cfg, c) -> str | None:
     return best
 
 
+def region_of(icp, c) -> str | None | bool:
+    """Allowed region name, False if located elsewhere, None if the location is unknown."""
+    geo = " ".join(str(c[k] or "") for k in ("location", "country")).lower()
+    if not geo.strip():
+        return None
+    for region, markers in icp["regions"].items():
+        if any(m in geo for m in markers):
+            return region
+    return False
+
+
+OPEN_STAGES = ("new", "qualified", "disqualified", "researched", "ready", "in_sequence", "nurture")
+
+
 def cmd_qualify(args) -> None:
-    """Rule-based pass: decision-maker title, US, headcount band. Sets fit + reach."""
+    """ICP filter: owner/C-suite title, allowed region, headcount band. Sets fit + reach.
+
+    --enforce also re-checks contacts already being worked (researched, ready, in sequence,
+    nurture) and disqualifies any that fail, including those whose location is unknown.
+    """
     cfg = load_config()
     icp = cfg["icp"]
     inc = re.compile(icp["title_include"], re.I)
     exc = re.compile(icp["title_exclude"], re.I)
     con = connect()
-    rows = con.execute("SELECT * FROM contacts WHERE stage IN ('new', 'qualified', 'disqualified')" if not args.all
-                       else "SELECT * FROM contacts").fetchall()
-    stats = {"qualified": 0, "disqualified": 0}
+    stages = OPEN_STAGES if args.enforce else ("new", "qualified", "disqualified")
+    rows = con.execute(f"SELECT * FROM contacts WHERE stage IN ({','.join('?' * len(stages))})", stages).fetchall()
+    stats = {"qualified": 0, "disqualified": 0, "kept": 0}
     for c in rows:
         title = c["title"] or ""
         reasons = []
         dm = bool(inc.search(title)) and not exc.search(title)
         if not dm:
             reasons.append("title")
-        geo = " ".join(str(c[k] or "") for k in ("location", "country")).lower()
-        us = None if not geo.strip() else any(m in geo for m in icp["us_markers"])
-        if us is False:
+        region = region_of(icp, c)
+        if region is False:
             reasons.append("geo")
+        elif region is None and args.enforce:
+            reasons.append("geo-unknown")
         emp = c["employees"]
-        size_ok = None if emp is None else icp["employees_min"] <= emp <= icp["employees_max"]
+        size_ok = None if emp is None else icp["size"]["employees_min"] <= emp <= icp["size"]["employees_max"]
         if size_ok is False:
             reasons.append("size")
         route = c["route"] or guess_route(cfg, c)
 
-        fit = (2 if dm else 0) + (1 if us else 0) + (1 if size_ok else 0) + (1 if route else 0)
-        if us is None or size_ok is None:
+        fit = (2 if dm else 0) + (1 if region else 0) + (1 if size_ok else 0) + (1 if route else 0)
+        if region is None or size_ok is None:
             fit = max(fit, 2 if dm else 0)  # unknowns: research fills the gap
         email_v = c["email"] and c["email_status"] == "verified"
         reach = 5 if c["degree"] == 1 else 4 if email_v else 3 if (c["degree"] == 2 or c["email"]) else 2
 
-        stage = "disqualified" if reasons else "qualified"
-        if c["stage"] not in ("new", "qualified", "disqualified"):
-            stage = c["stage"]  # --all re-scores without moving worked contacts
+        if reasons:
+            stage = "disqualified"
+        elif c["stage"] in ("new", "qualified", "disqualified"):
+            stage = "qualified"
+        else:
+            stage = c["stage"]  # worked contacts that still fit keep their place
+        if stage == "disqualified" and c["stage"] not in ("new", "qualified", "disqualified"):
+            con.execute("INSERT INTO touches (contact_id, ts, event, detail) VALUES (?,?,?,?)",
+                        (c["id"], now_iso(), "note", f"disqualified by ICP check: {','.join(reasons)}"))
         con.execute(
-            "UPDATE contacts SET is_decision_maker=?, fit=?, reach=?, route=?, stage=?, disq_reason=?, updated_at=? WHERE id=?",
-            (int(dm), min(fit, 5), reach, route, stage, ",".join(reasons) or None, now_iso(), c["id"]),
+            "UPDATE contacts SET is_decision_maker=?, fit=?, reach=?, route=?, stage=?, disq_reason=?, "
+            "next_touch_due=CASE WHEN ?='disqualified' THEN NULL ELSE next_touch_due END, "
+            "country=COALESCE(country, ?), updated_at=? WHERE id=?",
+            (int(dm), min(fit, 5), reach, route, stage, ",".join(reasons) or None, stage,
+             region or None, now_iso(), c["id"]),
         )
-        if stage in stats:
-            stats[stage] += 1
+        stats[stage if stage in stats else "kept"] += 1
     con.commit()
     unknown = con.execute(
         "SELECT COUNT(*) FROM contacts WHERE stage='qualified' AND (location IS NULL OR employees IS NULL)"
     ).fetchone()[0]
-    print(f"qualified {stats['qualified']}, disqualified {stats['disqualified']}")
+    print(f"qualified {stats['qualified']}, disqualified {stats['disqualified']}, still in progress {stats['kept']}")
     if unknown:
-        print(f"{unknown} qualified contacts lack location or headcount — enrich them (Apollo/Clay) during research.")
+        print(f"{unknown} qualified contacts lack location or headcount: enrich them (Clay) before outreach.")
 
 
 # --------------------------------------------------------------------------- browse
@@ -662,15 +689,21 @@ def cmd_dashboard(args) -> None:
     from dashboard import render  # local module
     con = connect()
     contacts = [dict(r) | {"score": score_total(r)} for r in con.execute("SELECT * FROM contacts")]
-    touches = [dict(r) for r in con.execute("SELECT * FROM touches ORDER BY ts DESC LIMIT 200")]
+    touches = [dict(r) for r in con.execute("SELECT * FROM touches ORDER BY ts DESC")]
+    messages = [dict(r) for r in con.execute("SELECT contact_id, step, channel, subject, body, status FROM messages ORDER BY contact_id, step")]
+    cfg = load_config()
     day = today()
     queue_md = OUT / f"queue-{day.isoformat()}.md"
     data = {
         "generated": now_iso(),
-        "owner": load_config()["owner"],
+        "today": day.isoformat(),
+        "owner": cfg["owner"],
+        "caps": cfg["caps"],
+        "sequences": {k: [st["channel"] for st in v["steps"]] for k, v in cfg["sequences"].items()},
         "stages": STAGES,
         "contacts": contacts,
         "touches": touches,
+        "messages": messages,
         "metrics": {by or "all": compute_metrics(con, None, by) for by in (None, "degree", "route", "variant")},
         "queue_file": queue_md.name if queue_md.exists() else None,
     }
@@ -700,7 +733,7 @@ def main(argv=None) -> None:
     s.set_defaults(fn=cmd_import_csv)
 
     s = sub.add_parser("qualify", help="rule-based ICP filter + fit/reach scores")
-    s.add_argument("--all", action="store_true", help="re-score every contact (keeps worked stages)")
+    s.add_argument("--enforce", action="store_true", help="also re-check contacts already being worked and disqualify misfits")
     s.set_defaults(fn=cmd_qualify)
 
     s = sub.add_parser("list", help="list contacts")

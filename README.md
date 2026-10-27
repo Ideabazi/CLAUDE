@@ -1,6 +1,6 @@
 # Ideabazi LinkedIn Outreach OS
 
-A Claude Code–run outreach system for Ideabazi Ventures. It finds US founders, CEOs, presidents and owners of SMB and mid-market companies across Dave's 1st, 2nd and 3rd-degree LinkedIn network, matches each to the Ideabazi service that fits, writes researched icebreakers and sequences, and runs a measured daily loop that ends in a booked call at **https://cal.com/ideabazi-daveb/30min**.
+A Claude Code–run outreach system for Ideabazi Ventures. It finds owners and C-suite leaders (founder, CEO, president, owner, managing director) of SMB and mid-market companies in the USA, Europe, Norway, Ireland, Australia, UAE, Saudi Arabia and Singapore across Dave's 1st, 2nd and 3rd-degree LinkedIn network, matches each to the Ideabazi service that fits, writes researched icebreakers and sequences, and runs a measured daily loop that ends in a booked call at **https://cal.com/ideabazi-daveb/30min**.
 
 The system follows one principle: **40 researched contacts that get worked beat 500 scraped ones that get ignored.** Claude does the research, the copy and the bookkeeping. Dave sets the volume and presses Send.
 

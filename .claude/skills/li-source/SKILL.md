@@ -5,7 +5,7 @@ description: Pull prospects into the outreach CRM by LinkedIn degree — 1st-deg
 
 # li-source — get the right people into the CRM
 
-Goal: US founders / CEOs / presidents / owners of SMB and mid-market companies (5–500 employees) that fit an Ideabazi offer route in `config/outreach.toml`. Every source ends in the same place: `python3 crm/ob.py qualify`.
+Goal: **owners and C-suite only** (founder, CEO, president, owner, managing director, chief X officer) at SMB and mid-market companies (5–500 employees) in **USA, Europe (incl. UK), Norway, Ireland, Australia, UAE/Dubai, Saudi Arabia or Singapore**, that fit an Ideabazi offer route in `config/outreach.toml`. Every source ends in the same place: `python3 crm/ob.py qualify --enforce`. A contact with an unknown location must be enriched before they can qualify.
 
 ## Ground rules
 - **No Apollo.** The connected Apollo account belongs to a client. Wherever this file mentions Apollo, use Clay, FullEnrich or Vibe Prospecting instead (confirm the account is Dave's first).
@@ -22,7 +22,7 @@ Goal: US founders / CEOs / presidents / owners of SMB and mid-market companies (
 
 ## 2nd-degree
 Option A (best): **Sales Navigator** lead search. Dave runs it, or Claude walks him through it:
-- Connections: 2nd · Geography: United States · Seniority: Owner/Partner, CXO · Current title: Founder OR CEO OR President OR Owner · Company headcount: 11–50, 51–200, 201–500 · Industry: per route (see config).
+- Connections: 2nd · Geography: United States, United Kingdom, EU countries, Norway, Ireland, Australia, United Arab Emirates, Saudi Arabia, Singapore · Seniority: Owner/Partner, CXO · Current title: Founder OR CEO OR President OR Owner · Company headcount: 11–50, 51–200, 201–500 · Industry: per route (see config).
 - Save as a lead list. Export via Dave's own export tool or a CSV copy, then `import-csv <file> --degree 2 --source salesnav --campaign <slug>`.
 
 Option B: **Apollo** `apollo_mixed_people_api_search` with the same filters (person_titles, person_seniorities owner/founder/c_suite, person_locations United States, organization_num_employees_ranges). Searching without revealing emails is free. Export to CSV and `import-csv --degree 3`. Then **degree check**: for the top-scored rows only, open each profile in Dave's browser (view only, within the profile-view cap) and record the degree, mutual count and up to 2 mutual names through `research-in`. A 2nd-degree contact whose mutual is a client or friend becomes a warm-intro candidate.

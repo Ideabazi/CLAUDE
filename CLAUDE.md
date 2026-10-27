@@ -1,6 +1,6 @@
 # Ideabazi LinkedIn Outreach System
 
-A local CRM plus Claude skills that run Dave Banerjee's (Ideabazi Ventures) LinkedIn-led outreach to US founders, CEOs, presidents and owners of SMB and mid-market companies. The goal is booked conversations at https://cal.com/ideabazi-daveb/30min.
+A local CRM plus Claude skills that run Dave Banerjee's (Ideabazi Ventures) LinkedIn-led outreach to **owners and C-suite only** (founder, CEO, president, owner, managing director, chief X officer) of SMB and mid-market companies (5–500 staff) in **USA, Europe incl. UK, Norway, Ireland, Australia, UAE/Dubai, Saudi Arabia and Singapore**. This applies to every stage, nurture included; `ob qualify --enforce` checks it. The goal is booked conversations at https://cal.com/ideabazi-daveb/30min.
 
 ## Layout
 - `crm/ob.py` — the CLI (stdlib Python 3.11+). `python3 crm/ob.py -h`
