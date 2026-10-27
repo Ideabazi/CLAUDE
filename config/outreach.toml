@@ -85,6 +85,13 @@ steps = [
   { day = 23, channel = "email",            angle = "Clean close-out (<40 words)" },
 ]
 
+[sequences.advocate]
+description = "Former colleagues and people who recommended Dave: reconnect first, then ask for one intro. No pitch."
+steps = [
+  { day = 0,  channel = "linkedin_dm", angle = "Reconnect on real shared history + what Dave does now + a question about them (<80 words, no ask)" },
+  { day = 10, channel = "linkedin_dm", angle = "One specific referral ask: a founder who'd benefit from a free 3-fix pipeline teardown (<60 words)" },
+]
+
 [sequences.third_degree]
 description = "3rd+/cold: email-led, LinkedIn as a supporting channel"
 steps = [

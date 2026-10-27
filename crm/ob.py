@@ -53,7 +53,7 @@ RESEARCH_FIELDS = {
     "email_status", "location", "country", "employees", "industry", "degree",
     "mutuals", "warm_path", "recent_activity", "route", "campaign", "fit",
     "signal", "pain", "reach", "capacity", "signal_note", "pain_note", "gift",
-    "icebreaker_a", "icebreaker_b", "icebreaker_choice", "notes", "stage",
+    "icebreaker_a", "icebreaker_b", "icebreaker_choice", "notes", "stage", "sequence", "source",
 }
 
 
