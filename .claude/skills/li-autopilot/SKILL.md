@@ -5,7 +5,7 @@ description: The scheduled daily outreach run. Restore the CRM, sync replies, so
 
 # li-autopilot — the daily unattended run
 
-Dave's settings (27 Oct 2026): **10 new prospects a day, 7 days a week**, Clay enrichment approved, **copy auto-approved** when it scores 15+ and passes every check. This run sends nothing; the `li-sender` run at 10:10am PT sends the approved touches from Dave's browser.
+Dave's settings (27 Oct 2026): **10 new approved prospects a day, 7 days a week** (10 connection requests a day), Clay enrichment approved, **copy auto-approved** when it scores 15+ and passes every check. This run sends nothing; the `li-sender` run at 10:10am PT sends the approved touches from Dave's browser.
 
 ## 0. Set up (every run)
 1. `cd` to the repo. Make sure you're on `claude/youthful-euler-drnd4o` and current: `git fetch origin claude/youthful-euler-drnd4o && git checkout claude/youthful-euler-drnd4o && git pull --ff-only`.
@@ -28,6 +28,7 @@ For each `in_sequence` contact with an email, search Gmail for mail from that ad
 ## 2a. Work Dave's imported lists first (no sourcing while the pool is full)
 Run `python3 crm/ob.py list --stage qualified --json --limit 500`. If **20 or more** qualified contacts are waiting (for example from Dave's Clay list `clay-marketing-cxo`, imported 27 Oct 2026), skip step 2 today.
 - Take the 10 best: companies with 10–200 staff first, then those with no recorded past contact.
+- **Top up to hit 10 approved.** After scoring (step 3), if fewer than 10 scored 15+, enrich and score the next best, a few at a time, until 10 are approved or 15 have been enriched today. Never enrich more than 15 in a day.
 - Enrich them with the same Clay data points: company Open Jobs, Recent News and Latest Funding, plus the contact's Recent LinkedIn Posts. Use `search-contacts` with their company domain to get a taskId first.
 - Then go straight to step 3.
 - Only source new prospects (step 2) when fewer than 20 are waiting.
@@ -47,7 +48,7 @@ Run `python3 crm/ob.py list --stage qualified --json --limit 500`. If **20 or mo
   - **Owner or C-suite only.** No VPs, heads, directors, managers or leads, ever (Dave, 27 Oct 2026).
   - Keep only people whose `location_name` is in an allowed region (`config/outreach.toml` → `[icp.regions]`).
 - **Dedupe before spending credits:** run `python3 crm/ob.py list --search "<company>" --json`. Skip anyone already in the CRM (including disqualified and nurture).
-- **Enrich** exactly the 10 kept companies and people, never more:
+- **Enrich** the 10 kept companies and people. If fewer than 10 score 15+, source and enrich a few more, up to 15 in total:
   - company: Open Jobs, Recent News, Latest Funding
   - contact: Custom "Recent LinkedIn Posts" (last 60 days)
   - Note the number of data points used in the report.
@@ -69,7 +70,7 @@ Run `python3 crm/ob.py plan` with the default volume of 10 new starts, so the re
 3. Commit and push code or config changes only. Never commit `data/`.
 
 ## 6. Report to Dave (short)
-- **New today:** how many found, researched and nurtured, with the top 3 (name, company, one-line signal).
+- **New today:** how many found, enriched, approved (target 10) and nurtured, with the top 3 (name, company, one-line signal).
 - **Auto-approved today:** the IDs plus the icebreaker in use. Say: "These send at 10:10am PT; reply 'hold li-00xx' to stop any of them."
 - **Today's queue:** counts by channel. Remind him the Claude desktop app must be open at 10:10am PT for the sender run.
 - **Replies or meetings** since yesterday.
@@ -79,5 +80,5 @@ Run `python3 crm/ob.py plan` with the default volume of 10 new starts, so the re
 ## Never
 - Send, connect, DM or post on LinkedIn, or create Gmail drafts, in this run (sending is `li-sender`'s job).
 - Use Apollo.
-- Enrich more than 10 new prospects a day.
+- Enrich more than 15 prospects a day (10 is the target; up to 5 more only to replace ones that scored under 15).
 - Invent a signal, a fact or a mutual connection.
