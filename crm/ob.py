@@ -647,6 +647,42 @@ def cmd_export(args) -> None:
     print(f"exported {len(rows)} contacts to {path}")
 
 
+# --------------------------------------------------------------------------- page actions
+
+PAGE_EVENTS = {"replied", "booked", "held", "proposal", "won", "lost", "optout", "hold", "note"}
+
+
+def cmd_apply_actions(args) -> None:
+    """Apply updates Dave made on the dashboard page.
+
+    Input: a JSON list of the page's pending `actions` documents, each with `_id`
+    (the document id), contact_id, event, sentiment, note and created_at. Prints the
+    `_id`s it applied so the caller can mark those documents applied.
+    """
+    items = json.loads(Path(args.path).read_text())
+    applied, skipped = [], []
+    for a in sorted(items, key=lambda a: a.get("created_at") or ""):
+        cid, ev = a.get("contact_id"), a.get("event")
+        if ev not in PAGE_EVENTS or not cid:
+            skipped.append((a.get("_id"), f"unknown event {ev!r}"))
+            continue
+        con = connect()
+        if not con.execute("SELECT 1 FROM contacts WHERE id=?", (cid,)).fetchone():
+            skipped.append((a.get("_id"), f"unknown contact {cid}"))
+            continue
+        note = (a.get("note") or "").strip() or None
+        argv = ["log", cid, "nurture" if ev == "hold" else ev, "--at", (a.get("created_at") or now_iso())[:19]]
+        if ev == "hold":
+            note = "held by Dave" + (f": {note}" if note else "")
+        if ev == "replied" and a.get("sentiment"):
+            argv += ["--sentiment", a["sentiment"]]
+        if note:
+            argv += ["--note", note]
+        main(argv)
+        applied.append(a.get("_id"))
+    print(json.dumps({"applied": applied, "skipped": skipped}))
+
+
 # --------------------------------------------------------------------------- backup
 
 TABLES = ("contacts", "messages", "touches")
@@ -778,6 +814,9 @@ def main(argv=None) -> None:
 
     s = sub.add_parser("export", help="export contacts to CSV")
     s.add_argument("path"); s.set_defaults(fn=cmd_export)
+
+    s = sub.add_parser("apply-actions", help="apply updates made on the dashboard page (JSON list of action docs)")
+    s.add_argument("path"); s.set_defaults(fn=cmd_apply_actions)
 
     s = sub.add_parser("backup", help="write the whole CRM to a JSON file")
     s.add_argument("path"); s.set_defaults(fn=cmd_backup)

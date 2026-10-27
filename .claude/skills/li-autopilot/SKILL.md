@@ -15,6 +15,13 @@ Dave's settings (27 Oct 2026): **10 new prospects a day, 7 days a week**, Clay e
    - If the read or restore fails, **stop**. Report the failure to Dave. Never start from an empty or stale CRM: duplicates and lost history cost more than a skipped day.
 3. Run `python3 -m unittest discover -s tests` and stop if it fails.
 
+## Apply Dave's page updates (right after the restore, before anything else)
+Dave can mark contacts on the dashboard: replied, booked, held, proposal, won, lost, hold, opted out, or a note. Each one is a document in the page's `actions` collection.
+1. Load the `ArtifactData` tool with ToolSearch. Query url https://claude.ai/artifact/1VW4dQU9Jw6z4ppgEUB1k2, collection `actions`, `status == "pending"`.
+2. Write the documents as a JSON list to `data/page-actions.json`, each with its document id as `_id`, then run `python3 crm/ob.py apply-actions data/page-actions.json`.
+3. Use one `batch` to update every `_id` in its `applied` list to `{"status": "applied", "applied_at": "<now ISO>"}`. Leave any skipped ones pending and name them in the report.
+4. Holds matter most here: a contact Dave marked "hold" must not be sent to today.
+
 ## 1. Sync replies (email only; LinkedIn is Dave's)
 For each `in_sequence` contact with an email, search Gmail for mail from that address since `last_touch_at`. Log replies with `li-log` rules. Skip this step if Gmail isn't connected, and say so in the report.
 

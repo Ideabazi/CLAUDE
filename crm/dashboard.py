@@ -60,6 +60,17 @@ nav a[aria-current="page"] { color: var(--bar-ink); border-bottom-color: var(--a
 nav a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, tr:focus-visible, .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .updated { color: var(--bar-muted); font-size: 12px; padding-bottom: 10px; font-family: var(--mono); }
 main { padding-block: 20px 48px; }
+.act { border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 16px 0; background: var(--soft); }
+.act .btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.act button, .undo { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.act button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.act button:disabled { opacity: .5; cursor: default; }
+.act textarea { width: 100%; font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); min-height: 54px; resize: vertical; }
+.act .hint { font-size: 12px; color: var(--muted); }
+.pend { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; padding: 6px 0; border-top: 1px dashed var(--line); }
+.chip-pend { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 11px; border: 1px dashed var(--warn); color: var(--warn); white-space: nowrap; }
+.pending-count { color: var(--bar-ink); background: var(--warn); border-radius: 999px; padding: 1px 8px; font-size: 12px; margin-bottom: 10px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--panel); padding: 9px 14px; border-radius: 6px; z-index: 30; font-size: 13px; max-width: calc(100% - 32px); }
 .demo { margin-bottom: 16px; padding: 8px 12px; border: 1px dashed var(--warn); border-radius: 6px; color: var(--warn); }
 h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0 0 12px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
@@ -139,6 +150,7 @@ aside h2 { margin-top: 18px; }
       <a href="#contacts" data-tab="contacts">Contacts</a>
       <a href="#activity" data-tab="activity">Activity</a>
     </nav>
+    <span class="pending-count" id="pendcount" hidden></span>
     <div class="updated">Updated __GENERATED__</div>
   </div>
 </header>
@@ -182,6 +194,7 @@ aside h2 { margin-top: 18px; }
 
 <div class="scrim" id="scrim" hidden></div>
 <aside id="drawer" hidden aria-label="Contact record"></aside>
+<div class="toast" id="toast" role="status" hidden></div>
 
 <script>
 const D = __DATA__;
@@ -336,6 +349,7 @@ function openRecord(id) {
   const ib = k => c["icebreaker_" + k.toLowerCase()] ? `<div class="msg"><div class="h"><span>Icebreaker ${k}${c.icebreaker_choice === k ? " · in use" : ""}</span></div>${esc(c["icebreaker_" + k.toLowerCase()])}</div>` : "";
   drawer.innerHTML = `<button class="close" id="close">Close</button><h3>${esc(name(c))}</h3>
     <div class="muted">${esc(c.title || "")} · ${esc(c.company || "")}</div><div style="margin-top:8px">${pill(c.stage)}</div>
+    <div id="actpanel"></div>
     <dl>
       <dt>LinkedIn</dt><dd>${c.linkedin_url ? `<a href="${esc(c.linkedin_url)}" target="_blank" rel="noopener">${esc(c.linkedin_url.replace("https://www.linkedin.com", ""))}</a>` : "—"}</dd>
       <dt>Email</dt><dd>${esc(c.email || "—")}${c.email_status ? ` <span class="muted">(${esc(c.email_status)})</span>` : ""}</dd>
@@ -354,10 +368,92 @@ function openRecord(id) {
     ${(msgs[id] || []).length ? `<h2>Messages</h2>` + msgs[id].map(m => `<div class="msg"><div class="h"><span>Step ${m.step + 1} · ${esc(CH[m.channel] || m.channel)}</span><span>${esc(m.status)}</span></div>${m.subject ? `<b>${esc(m.subject)}</b>\n` : ""}${esc(m.body)}</div>`).join("") : ""}
     <h2>Timeline</h2>${(tby[id] || []).length ? `<div class="feed"><ul>${tby[id].map(t => `<li><time>${esc(t.ts.slice(0, 16).replace("T", " "))}</time><div>${line(t)}</div></li>`).join("")}</ul></div>` : `<p class="empty">No activity yet.</p>`}`;
   drawer.hidden = scrim.hidden = false;
+  openId = id; renderActions();
   document.getElementById("close").onclick = closeRecord;
   document.getElementById("close").focus();
 }
-function closeRecord() { drawer.hidden = scrim.hidden = true; }
+function closeRecord() { drawer.hidden = scrim.hidden = true; openId = null; }
+
+/* ---------- updates from this page ----------
+   Each button writes one document to the page's "actions" collection. The
+   scheduled runs (and Claude in chat) apply pending actions to the CRM with
+   `ob apply-actions`, then mark them applied; the next publish shows the result. */
+let openId = null, actions = [], actionsDb = null, canWrite = false;
+const ACT = [
+  ["replied", "Replied · interested", "interested"], ["replied", "Replied · question", "question"],
+  ["replied", "Replied · not now", "not_now"], ["replied", "Replied · not interested", "not_interested"],
+  ["booked", "Meeting booked"], ["held", "Meeting held"], ["proposal", "Proposal sent"],
+  ["won", "Won"], ["lost", "Lost"], ["hold", "Hold (don't send)"], ["optout", "Opted out"],
+];
+const ACT_LABEL = Object.fromEntries(ACT.map(([e, l, s]) => [e + (s || ""), l]));
+const actLabel = a => a.event === "note" ? "Note" : ACT_LABEL[a.event + (a.sentiment || "")] || a.event;
+const pendingFor = id => actions.filter(a => a.contact_id === id && a.status === "pending");
+function toast(msg) {
+  const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 4000);
+}
+function renderActions() {
+  const el = document.getElementById("actpanel");
+  if (!el || !openId) return;
+  const pend = pendingFor(openId);
+  const list = pend.map(a => `<div class="pend"><span>${esc(actLabel(a))}${a.note ? ` <span class="muted">· ${esc(a.note)}</span>` : ""} <span class="chip-pend">waiting for next run</span></span>` +
+    (canWrite ? `<button class="undo" data-undo="${esc(a._id)}">Undo</button>` : "") + `</div>`).join("");
+  if (!actionsDb) {
+    el.innerHTML = pend.length ? `<div class="act">${list}</div>` : "";
+    return;
+  }
+  el.innerHTML = `<div class="act"><b>Update this contact</b>
+    <div class="btns">${ACT.map(([e, l, s]) => `<button data-ev="${e}" data-sent="${s || ""}" ${canWrite ? "" : "disabled"}>${esc(l)}</button>`).join("")}</div>
+    <textarea id="actnote" placeholder="Optional note: what they said, meeting date, next step" aria-label="Note"></textarea>
+    <div class="btns"><button class="primary" data-ev="note" ${canWrite ? "" : "disabled"}>Save note only</button></div>
+    <div class="hint">${canWrite ? "Saved here instantly. The CRM applies it at the next run (7:40am or 10:10am PT), or right away if you ask Claude." : "View only: you can't update this page."}</div>
+    ${list}</div>`;
+}
+async function saveAction(ev, sentiment) {
+  if (!actionsDb || !openId) return;
+  const note = (document.getElementById("actnote") || {}).value || "";
+  const doc = { contact_id: openId, event: ev, sentiment: sentiment || null, note: note.trim().slice(0, 500), created_at: new Date().toISOString(), status: "pending" };
+  try {
+    await actionsDb.collection("actions").add(doc);
+    toast(`Saved: ${actLabel(doc)} for ${name(C[openId])}`);
+  } catch (e) {
+    if (e && e.code === "invalid_argument") { canWrite = false; renderActions(); toast("This page is view-only for you."); }
+    else toast("Couldn't save. Try again in a moment.");
+  }
+}
+drawer.addEventListener("click", async e => {
+  const b = e.target.closest("button[data-ev]");
+  if (b && !b.disabled) { b.disabled = true; await saveAction(b.dataset.ev, b.dataset.sent); b.disabled = false; return; }
+  const u = e.target.closest("button[data-undo]");
+  if (u && actionsDb) {
+    try { await actionsDb.collection("actions").doc(u.dataset.undo).delete(); toast("Removed."); } catch (err) { toast("Couldn't remove it. Try again."); }
+  }
+});
+function markPending() {
+  const ids = new Set(actions.filter(a => a.status === "pending").map(a => a.contact_id));
+  const n = actions.filter(a => a.status === "pending").length;
+  const pc = document.getElementById("pendcount");
+  pc.hidden = !n; pc.textContent = `${n} update${n === 1 ? "" : "s"} waiting for the next run`;
+  document.querySelectorAll("[data-id]").forEach(el => {
+    const has = ids.has(el.dataset.id), chip = el.querySelector(".chip-pend");
+    if (has && !chip) { const b = el.querySelector("b"); if (b) b.insertAdjacentHTML("beforeend", `<span class="chip-pend">update pending</span>`); }
+    if (!has && chip) chip.remove();
+  });
+}
+(async () => {
+  if (!window.claude || !window.claude.use) return;
+  const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+  if (!db) return;
+  actionsDb = db;
+  canWrite = user ? await user.canEdit() : true;
+  db.collection("actions").where("status", "==", "pending").onSnapshot(snap => {
+    actions = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+    markPending(); renderActions();
+  }, () => { actionsDb = null; renderActions(); });
+  renderActions();
+})();
+const _renderAll = renderAll;
+renderAll = function () { _renderAll(); markPending(); };
 scrim.onclick = closeRecord;
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") closeRecord();

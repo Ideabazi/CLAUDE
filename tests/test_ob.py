@@ -80,6 +80,21 @@ class CrmFlow(unittest.TestCase):
         self.assertEqual(c["stage"], "disqualified")
         self.assertEqual(c["disq_reason"], "geo-unknown")
 
+    def test_apply_page_actions(self):
+        self.run_ob("import-linkedin", "examples/sample_connections.csv")
+        self.run_ob("qualify")
+        acts = Path(self.tmp.name) / "a.json"
+        acts.write_text(json.dumps([
+            {"_id": "a2", "contact_id": "li-0002", "event": "hold", "note": "", "created_at": "2026-10-27T09:00:00Z"},
+            {"_id": "a1", "contact_id": "li-0001", "event": "replied", "sentiment": "interested", "note": "call Thu", "created_at": "2026-10-27T08:00:00Z"},
+            {"_id": "a3", "contact_id": "li-9999", "event": "won", "created_at": "2026-10-27T10:00:00Z"},
+        ]))
+        out = json.loads(self.run_ob("apply-actions", str(acts)).strip().splitlines()[-1])
+        self.assertEqual(out["applied"], ["a1", "a2"])
+        self.assertEqual(len(out["skipped"]), 1)
+        self.assertEqual(self.show("li-0001")["stage"], "replied")
+        self.assertEqual(self.show("li-0002")["stage"], "nurture")
+
     def test_backup_round_trip_through_dashboard(self):
         self.run_ob("import-linkedin", "examples/sample_connections.csv")
         self.run_ob("qualify")

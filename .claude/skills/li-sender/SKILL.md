@@ -20,6 +20,13 @@ Nothing else: no likes, comments, follows, InMail, posts, emails, edits to copy,
    - Open https://www.linkedin.com/feed/ and resize the window to 1440x1000.
    - If the browser is unreachable (desktop app closed, computer asleep) or LinkedIn isn't signed in, stop and report. Never enter credentials.
 
+## Apply Dave's page updates (right after the restore, before anything else)
+Dave can mark contacts on the dashboard: replied, booked, held, proposal, won, lost, hold, opted out, or a note. Each one is a document in the page's `actions` collection.
+1. Load the `ArtifactData` tool with ToolSearch. Query url https://claude.ai/artifact/1VW4dQU9Jw6z4ppgEUB1k2, collection `actions`, `status == "pending"`.
+2. Write the documents as a JSON list to `data/page-actions.json`, each with its document id as `_id`, then run `python3 crm/ob.py apply-actions data/page-actions.json`.
+3. Use one `batch` to update every `_id` in its `applied` list to `{"status": "applied", "applied_at": "<now ISO>"}`. Leave any skipped ones pending and name them in the report.
+4. Holds matter most here: a contact Dave marked "hold" must not be sent to today.
+
 ## 1. Sync first (view only, at most 25 profile or thread views)
 For every contact whose connection request was sent but not accepted (`ob show <id>` → touches), open their `linkedin_url`.
 - If the profile now shows them as **1st-degree** (a Message button, no Pending), run `python3 crm/ob.py log <id> accepted`.
