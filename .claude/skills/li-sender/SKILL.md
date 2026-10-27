@@ -6,7 +6,7 @@ description: The scheduled daily LinkedIn send run. Restore the CRM, check which
 # li-sender — send the approved touches from Dave's browser
 
 **Authorization.** Dave authorized this run on 27 Oct 2026. It sends only copy already stored in the CRM, to contacts already approved (stage `ready` or `in_sequence`):
-- at most **8 connection requests** (with the stored note)
+- at most **10 connection requests** (with the stored note)
 - at most **20 messages** per day
 
 Nothing else: no likes, comments, follows, InMail, posts, emails, edits to copy, or replies to people who answered. Dave handles replies.
@@ -37,7 +37,7 @@ For every contact who was sent a message, open the thread.
 Leave 20–40 seconds between views.
 
 ## 2. Plan
-Run `python3 crm/ob.py plan --json`. The `queue` holds today's touches within the caps (8 connects, 20 messages).
+Run `python3 crm/ob.py plan --json`. The `queue` holds today's touches within the caps (10 connects, 20 messages).
 - Skip any `email` touch: email isn't sent by this run.
 - Send in this order: messages to people who accepted first, then connection requests.
 

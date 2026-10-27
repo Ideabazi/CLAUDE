@@ -69,7 +69,7 @@ gift = "3-fix AI-visibility snapshot"
 channels = ["linkedin_connect", "linkedin_dm"]
 
 [caps]
-connect_requests_per_day = 8      # Claude sends from Dave's browser (Dave, 27 Oct 2026); LinkedIn's weekly ceiling is ~100
+connect_requests_per_day = 10     # Claude sends from Dave's browser (Dave, 27 Oct 2026: 10 a day); LinkedIn's weekly ceiling is ~100
 connect_requests_per_week = 80
 linkedin_dms_per_day = 20         # Dave, 27 Oct 2026
 emails_per_day = 20               # matches the Apollo guardrail in ideabazi-outbound

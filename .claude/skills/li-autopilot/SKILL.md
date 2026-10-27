@@ -61,7 +61,7 @@ Run `python3 crm/ob.py list --stage qualified --json --limit 500`. If **20 or mo
 - **Load and approve:** run `research-in data/research/<date>-autopilot.json`, then `approve` every new contact scoring 15+ whose copy passed validation (Dave's standing approval, 27 Oct 2026). Anything that failed a check stays `researched` and goes in the report.
 
 ## 4. Queue
-Run `python3 crm/ob.py plan` with the default volume of 10 new starts, so the report can preview the day. The sender run re-plans at 10:10am and does the sending. The caps (8 connects, 20 messages) hold any overflow for later days.
+Run `python3 crm/ob.py plan` with the default volume of 10 new starts, so the report can preview the day. The sender run re-plans at 10:10am and does the sending. The caps (10 connects, 20 messages) hold any overflow for later days.
 
 ## 5. Publish and back up
 1. Run `python3 crm/ob.py dashboard --artifact --out data/dashboard-site.html`.
